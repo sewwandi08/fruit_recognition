@@ -2,14 +2,14 @@ import streamlit as st
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import seaborn as sns # type: ignore
+import seaborn as sns
 import time
 from PIL import Image
 import tensorflow as tf
 
-# Tensorflow Model Prediction
-def model_prediction(test_image):
-    model_path = "trained_model.h5"
+# TensorFlow Model Prediction
+def model_prediction(test_image, resize_dim):
+    model_path = "my_model.keras"
     if not os.path.isfile(model_path):
         st.error(f"Model file '{model_path}' not found.")
         return None
@@ -20,17 +20,21 @@ def model_prediction(test_image):
         st.error(f"Error loading model: {e}")
         return None
     
-    image = tf.keras.preprocessing.image.load_img(test_image, target_size=(64, 64))
-    input_arr = tf.keras.preprocessing.image.img_to_array(image)
-    input_arr = np.array([input_arr])  # convert single image to batch
-    predictions = model.predict(input_arr)
-    return np.argmax(predictions)  # return index of max element
+    try:
+        image = tf.keras.preprocessing.image.load_img(test_image, target_size=(resize_dim, resize_dim))
+        input_arr = tf.keras.preprocessing.image.img_to_array(image)
+        input_arr = np.expand_dims(input_arr, axis=0)  # Convert single image to batch
+        predictions = model.predict(input_arr)
+        return np.argmax(predictions)  # Return index of max element
+    except Exception as e:
+        st.error(f"Error processing image: {e}")
+        return None
 
-# Sidebar
+# Sidebar Navigation
 st.sidebar.title("Dashboard")
 app_mode = st.sidebar.selectbox("Select Page", ["Home", "About Project", "Prediction", "Visualizations"])
 
-# Main Page
+# Main Page Logic
 if app_mode == "Home":
     st.header("WELCOME TO THE FRUITS & VEGETABLES RECOGNITION SYSTEM")
     image_path = "home_img.jpg"
@@ -38,17 +42,17 @@ if app_mode == "Home":
         st.image(image_path)
     else:
         st.error(f"Home image '{image_path}' not found.")
+    
     st.write("""
-### 
+### Discover the Power of AI in Identifying Fruits & Vegetables!
+This tool quickly and accurately identifies different fruits and vegetables from images. Whether you're a tech enthusiast, a curious learner, or someone who simply wants to explore the capabilities of AI, this app is designed with you in mind.
 
-Discover the power of artificial intelligence through our interactive web application. This tool allows you to quickly and accurately identify different fruits and vegetables from images. Whether you're a tech enthusiast, a curious learner, or someone who simply wants to explore the capabilities of AI, this app is designed with you in mind.
+**Key Features:**
+- *Instant Image Classification*: Upload an image and get instant results.
+- *User-Friendly Interface*: Seamless experience with intuitive design.
+- *Educational Tool*: Learn about various fruits and vegetables.
 
-*Key Features:*
-- *Instant Image Classification*: Upload an image of any fruit or vegetable, and our app will identify it within seconds.
-- *User-Friendly Interface*: Enjoy a seamless experience with a clean and intuitive design, making it easy for anyone to use.
-- *Educational Tool*: Learn more about various fruits and vegetables as you explore the classification results.
-
-Simply upload your image, and let the app do the rest. Experience the future of image recognition today!
+Upload an image and let the app do the rest. Experience the future of image recognition today!
 """)
     video_path = "veg.mp4"
     if os.path.isfile(video_path):
@@ -59,11 +63,11 @@ Simply upload your image, and let the app do the rest. Experience the future of 
 elif app_mode == "About Project":
     st.header("About Project")
     st.subheader("About Dataset")
-    st.text("This dataset contains images of the following food items:")
-    st.code("fruits- banana, apple, pear, grapes, orange, kiwi, watermelon, pomegranate, pineapple, mango.")
-    st.code("vegetables- cucumber, carrot, capsicum, onion, potato, lemon, tomato, raddish, beetroot, cabbage, lettuce, spinach, soy bean, cauliflower, bell pepper, chilli pepper, turnip, corn, sweetcorn, sweet potato, paprika, jalepeño, ginger, garlic, peas, eggplant.")
-    st.subheader("Content")
-    st.text("This dataset contains three folders:")
+    st.text("This dataset contains images of various fruits and vegetables.")
+    st.code("Fruits: banana, apple, pear, grapes, orange, kiwi, watermelon, pomegranate, pineapple, mango.")
+    st.code("Vegetables: cucumber, carrot, capsicum, onion, potato, lemon, tomato, radish, beetroot, cabbage, etc.")
+    st.subheader("Dataset Structure")
+    st.text("The dataset consists of three folders:")
     st.text("1. train (100 images each)")
     st.text("2. test (10 images each)")
     st.text("3. validation (10 images each)")
@@ -71,7 +75,7 @@ elif app_mode == "About Project":
 elif app_mode == "Prediction":
     st.header("Model Prediction")
     
-    # Input Widgets in Sidebar
+    # Sidebar Inputs for Prediction
     st.sidebar.subheader("Prediction Settings")
     resize_dim = st.sidebar.slider("Resize Image to:", min_value=32, max_value=128, value=64, step=8)
     feedback = st.sidebar.text_input("Feedback")
@@ -91,7 +95,7 @@ elif app_mode == "Prediction":
                 # Show progress and status updates
                 with st.spinner('Model is making prediction...'):
                     time.sleep(2)  # Simulate time delay for model prediction
-                    result_index = model_prediction(test_image)
+                    result_index = model_prediction(test_image, resize_dim)
                     if result_index is None:
                         st.error("Prediction could not be made.")
                     else:
@@ -130,10 +134,10 @@ elif app_mode == "Visualizations":
     
     # Line Plot for Model Performance
     st.subheader("Example: Model Performance Over Time")
-    epochs = np.arange(1, 32)
-    accuracy = np.random.rand(10) * 0.1 + 0.9  # Random accuracy data
-    loss = np.random.rand(10) * 0.1 + 0.2  # Random loss data
-    
+    epochs = np.arange(1, 31)  # 30 epochs, starting from 1 to 30
+    accuracy = np.random.rand(len(epochs)) * 0.1 + 0.9  # Random accuracy data with matching length
+    loss = np.random.rand(len(epochs)) * 0.1 + 0.2  # Random loss data with matching length
+
     fig, ax = plt.subplots()
     ax.plot(epochs, accuracy, label='Accuracy', marker='o')
     ax.plot(epochs, loss, label='Loss', marker='o')
